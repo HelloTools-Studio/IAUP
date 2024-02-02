@@ -104,7 +104,7 @@ public final class ItemsAdderUploadPlus extends JavaPlugin {
 
             JSONObject jsonResponse = new JSONObject(responseString);
             if (jsonResponse.getString("status").equals("success")) {
-                String downloadUrl = jsonResponse.getString("url");
+                String downloadUrl = jsonResponse.getString(Objects.requireNonNull(YamlConfig.getString("global.download_key")));
                 modifyConfigFile(downloadUrl);
                 sender.sendMessage(Objects.requireNonNull(YamlConfig.getString("locale.success-upload")));
             } else {
