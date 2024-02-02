@@ -36,14 +36,17 @@ fastify.post('/upload', async (request, reply) => {
         if (data) {
             const filename = data.filename
             fastify.log.warn(`Someone from ${request.ip} is uploading ${filename}`)
-            fs.writeFile(`${upload_dir}/${filename}`, data.file, 'utf8', (err) => {
-                if (err) {
-                    fastify.log.error(err);
-                    return reply.status(500).send({ status: 'failure', code: 500, msg: `Failed to save file(500): ${err}` })
-                }
+            const readStream = data.file
+            const writeStream = fs.createWriteStream(`${upload_dir}/${filename}`);
+            readStream.pipe(writeStream);
+            writeStream.on('finish', () => {
                 fastify.log.warn(`Saved file ${filename}`)
             });
-            return reply.status(200).send({ status: 'success', url: `${base_url}/${filename}`, code: 200 , msg: `Successfully upload file: ${filename}` })
+            writeStream.on('error', (err) => {
+                fastify.log.error(err);
+                return reply.status(500).send({ status: 'failure', code: 500, msg: `Failed to save file(500): ${err}` })
+            });
+            return reply.status(200).send({ status: 'success', url: `${base_url}/${filename}`, code: 200, msg: `Successfully upload file: ${filename}` })
         } else {
             fastify.log.warn(`Someone is trying the POST upload interface, but he failed!`)
             return reply.status(400).send({ status: 'failure', code: 400, msg: `Failed to upload file(400): unknown filename` })

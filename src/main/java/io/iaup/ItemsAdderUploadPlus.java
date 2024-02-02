@@ -1,6 +1,5 @@
 package io.iaup;
 
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -19,7 +18,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -35,14 +35,15 @@ public final class ItemsAdderUploadPlus extends JavaPlugin {
         File configFile = new File(getDataFolder(), "config.yml");
         if (!configFile.exists()) {
             boolean isMkdirSuccess = configFile.getParentFile().mkdirs();
-            if (!isMkdirSuccess) Bukkit.getConsoleSender().sendMessage(NamedTextColor.RED + "An error occurred unexpectedly. " + "Failed to create plugin configuration!");
+            if (!isMkdirSuccess) Bukkit.getConsoleSender().sendMessage("An error occurred unexpectedly. "
+                    + "Failed to create plugin configuration!");
             saveResource("config.yml", false);
         }
         YamlConfig = new YamlConfiguration();
         try {
             YamlConfig.load(configFile);
         } catch (Exception e) {
-            Bukkit.getConsoleSender().sendMessage(NamedTextColor.RED + "An error occurred unexpectedly. " + "Failed to read config!");
+            Bukkit.getConsoleSender().sendMessage("An error occurred unexpectedly. " + "Failed to read config!");
             e.printStackTrace();
         }
 
@@ -53,7 +54,7 @@ public final class ItemsAdderUploadPlus extends JavaPlugin {
             try {
                 YamlConfig.save(configFile);
             } catch (IOException e) {
-                Bukkit.getConsoleSender().sendMessage(NamedTextColor.RED + "An error occurred unexpectedly. " + "Failed to save config!");
+                Bukkit.getConsoleSender().sendMessage("An error occurred unexpectedly. " + "Failed to save config!");
                 e.printStackTrace();
             }
         }
@@ -67,13 +68,20 @@ public final class ItemsAdderUploadPlus extends JavaPlugin {
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         if (args.length > 0 && args[0].equalsIgnoreCase("reload")) {
+            File configFile = new File(getDataFolder(), "config.yml");
+            try {
+                YamlConfig.load(configFile);
+            } catch (Exception e) {
+                Bukkit.getConsoleSender().sendMessage("An error occurred unexpectedly. " + "Failed to read config!");
+                e.printStackTrace();
+            }
             sender.sendMessage(Objects.requireNonNull(YamlConfig.getString("locale.reload")));
         }
         File file = new File("plugins/ItemsAdder/output/generated.zip");
         if (file.exists()) {
             uploadFileAsync(file, sender);
         } else {
-            Bukkit.getConsoleSender().sendMessage(NamedTextColor.RED + "An error occurred unexpectedly. " + "Failed to read generated.zip!");
+            Bukkit.getConsoleSender().sendMessage("An error occurred unexpectedly. " + "Failed to read generated.zip!");
             sender.sendMessage(Objects.requireNonNull(YamlConfig.getString("locale.failed-read")));
         }
         return true;
@@ -104,7 +112,8 @@ public final class ItemsAdderUploadPlus extends JavaPlugin {
 
             JSONObject jsonResponse = new JSONObject(responseString);
             if (jsonResponse.getString("status").equals("success")) {
-                String downloadUrl = jsonResponse.getString(Objects.requireNonNull(YamlConfig.getString("global.download_key")));
+                String downloadUrl = jsonResponse.getString(Objects.requireNonNull(
+                        YamlConfig.getString("global.download_key")));
                 modifyConfigFile(downloadUrl);
                 sender.sendMessage(Objects.requireNonNull(YamlConfig.getString("locale.success-upload")));
             } else {
@@ -118,14 +127,23 @@ public final class ItemsAdderUploadPlus extends JavaPlugin {
 
     public void modifyConfigFile(String newUrl) {
         IAConfig = new YamlConfiguration();
-        File IAconfigFile = new File(Objects.requireNonNull(getServer().getPluginManager().getPlugin("ItemsAdder")).getDataFolder(), "config.yml");
+        File IAconfigFile = new File(Objects.requireNonNull(getServer().getPluginManager().getPlugin("ItemsAdder"))
+                .getDataFolder(), "config.yml");
         IAConfig = new YamlConfiguration();
         try {
             IAConfig.load(IAconfigFile);
         } catch (IOException | InvalidConfigurationException e) {
-            Bukkit.getConsoleSender().sendMessage(NamedTextColor.RED + Objects.requireNonNull(YamlConfig.getString("locale.error")) + Objects.requireNonNull(YamlConfig.getString("locale.failed-read")));
+            Bukkit.getConsoleSender().sendMessage(Objects.requireNonNull(YamlConfig.getString("locale.error"))
+                    + Objects.requireNonNull(YamlConfig.getString("locale.failed-read")));
             e.printStackTrace();
         }
-        IAConfig.set("resource-pack.hosting.external-host.url", newUrl);
+        try {
+            IAConfig.set("resource-pack.hosting.external-host.url", newUrl);
+            IAConfig.save(IAconfigFile);
+        } catch (Exception e) {
+            Bukkit.getConsoleSender().sendMessage(Objects.requireNonNull(YamlConfig.getString("locale.error"))
+                    + Objects.requireNonNull(YamlConfig.getString("locale.failed-save-console")));
+            e.printStackTrace();
+        }
     }
 }

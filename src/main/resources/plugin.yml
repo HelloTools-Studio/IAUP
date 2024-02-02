@@ -1,10 +1,10 @@
 name: ItemsAdderUploadPlus
-version: '${version}'
+version: '0.0.2'
 main: io.iaup.ItemsAdderUploadPlus
 api-version: 1.13
 commands:
   iaup:
     description: Upload your ItemsAdder files to external server
     usage: /<command>
-    permission: iaup.run
+    permission: iaup.op
     permission-message: You don't have <permission>
