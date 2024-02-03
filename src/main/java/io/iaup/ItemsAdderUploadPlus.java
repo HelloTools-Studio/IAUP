@@ -11,7 +11,6 @@ import org.apache.http.util.EntityUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -46,8 +45,6 @@ public final class ItemsAdderUploadPlus extends JavaPlugin {
             Bukkit.getConsoleSender().sendMessage("An error occurred unexpectedly. " + "Failed to read config!");
             e.printStackTrace();
         }
-
-
         if (!YamlConfig.contains("global.uid")) {
             String newuid = UUID.randomUUID().toString();
             YamlConfig.set("global.uid", newuid);
@@ -132,7 +129,7 @@ public final class ItemsAdderUploadPlus extends JavaPlugin {
         IAConfig = new YamlConfiguration();
         try {
             IAConfig.load(IAconfigFile);
-        } catch (IOException | InvalidConfigurationException e) {
+        } catch (Exception e) {
             Bukkit.getConsoleSender().sendMessage(Objects.requireNonNull(YamlConfig.getString("locale.error"))
                     + Objects.requireNonNull(YamlConfig.getString("locale.failed-read")));
             e.printStackTrace();

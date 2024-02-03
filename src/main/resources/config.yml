@@ -1,5 +1,5 @@
 global:
-  uid: 93266666-9320-7451-0239-66662fa66666      # 请务必修改此项目 默认 93266666-9320-7451-0239-66662fa66666
+  uid: ''      # 请务必修改此项目 默认 93266666-9320-7451-0239-66662fa66666
   url: https://ia.tinksp.cn:38031/upload         # 指示要求上传的后端处理地址 如 IAUP SaaS https://iaup.liuzhen932.top/upload
   download_key: 'download_rul' # 改为 url 以兼容 IAUP SaaS
 
