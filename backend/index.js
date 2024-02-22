@@ -4,14 +4,21 @@ const util = require('node:util')
 const { pipeline } = require('node:stream')
 const pump = util.promisify(pipeline)
 
-
 // ================= Config =================
 const upload_dir = 'uploads'
 const base_url = 'https://iaup.liuzhen932.top/download'
 
-
 const fastify = require('fastify')({
-    logger: true
+    logger: {
+        level: 'info',
+        transport: {
+            target: 'pino-pretty',
+            options: {
+                translateTime: 'HH:MM:ss Z',
+                ignore: 'pid,hostname'
+            }
+        }
+    }
 })
 fastify.register(fastifyMultipart,
     {
@@ -29,20 +36,22 @@ fastify.get('/', function (_request, reply) {
     reply.send({ code: 200 })
 })
 
-fastify.get('/ping', function (_request, reply) {
-    reply.send({ code: 200 })
+fastify.get('/ping', function (request, reply) {
+    const ip = request.headers['cf-connecting-ip'] || request.ip
+    reply.send({ code: 200, ip: request.ip, header: request.headers, ip: ip })
 })
 
 // ================= Core Code ================= 
 fastify.post('/upload', async (request, reply) => {
+    const ip = request.headers['cf-connecting-ip'] || request.ip
     try {
         const data = await request.file()
         if (data) {
             const filename = data.filename
-            fastify.log.warn(`Someone from ${request.ip} is uploading ${filename}`)
+            fastify.log.warn(`Someone from ${ip} is uploading ${filename}`)
             await pump(data.file, fs.createWriteStream(`${upload_dir}/${filename}`))
-            fastify.log.warn(`Saved file ${filename}`)
-            return reply.status(200).send({ status: 'success', url: `${base_url}/${filename}`, code: 200, msg: `Successfully upload file: ${filename}` })
+            fastify.log.warn(`Saved file ${filename}(from ${ip})!`)
+            return reply.status(200).send({ status: 'success', url: `${base_url}/${filename}`, code: 200, msg: `Successfully upload file: ${filename}.` })
         } else {
             fastify.log.warn(`Someone is trying the POST upload interface, but he failed!`)
             return reply.status(400).send({ status: 'failure', code: 400, msg: `Failed to upload file(400): unknown filename` })
@@ -53,15 +62,18 @@ fastify.post('/upload', async (request, reply) => {
 });
 
 fastify.get('/upload', function (_request, reply) {
-    reply.status(502).send({ code: 502, msg: 'Bad Gateway' })
+    reply.status(405).send({ code: 405, msg: 'Method Not Allowed' })
 })
 
 fastify.get('/download/:filename', function (request, reply) {
     const { filename } = request.params;
+    const ip = request.headers['cf-connecting-ip'] || request.ip
     fs.readFile(`${upload_dir}/${filename}`, (err, data) => {
         if (err) {
+            fastify.log.warn(`Someone from ${ip} want to download ${filename}, but he failed!`)
             return reply.status(500).send({ status: 'failure', code: 500, msg: `Failed to read file(500): ${err}` })
         }
+        fastify.log.info(`Someone from ${ip} has downloaded ${filename}.`)
         return reply.status(200).header('Content-Type', 'application/zip').send(data);
     });
 })
